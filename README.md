@@ -3,6 +3,7 @@
 Ссылка на репозиторий:
 https://github.com/veraulitinaYa/bad-server
 
+
 ## Подготовка к работе
 1. Склонировать репозиторий
 2. Запустить docker
