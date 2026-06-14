@@ -10,6 +10,15 @@ import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
 import User from '../models/user'
 
+
+
+const getCsrfToken = (_req: Request, res: Response) => {
+    const token = crypto.randomBytes(32).toString('hex')
+
+    return res.json({
+        csrfToken: token,
+    })
+}
 // POST /auth/login
 const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -214,4 +223,5 @@ export {
     refreshAccessToken,
     register,
     updateCurrentUser,
+    getCsrfToken,
 }
