@@ -1,3 +1,4 @@
+import csurf from 'csurf'
 import { Router } from 'express'
 import {
     getCurrentUser,
@@ -9,21 +10,24 @@ import {
     updateCurrentUser,
 } from '../controllers/auth'
 import auth from '../middlewares/auth'
-import { getCsrfToken } from '../controllers/auth'
-import csurf from 'csurf'
+import {
+    validateAuthentication,
+    validateUserBody,
+} from '../middlewares/validations'
 
 const csrfProtection = csurf({ cookie: true })
 const authRouter = Router()
 
-authRouter.get('/csrf-token', (req, res) => {
+authRouter.get('/csrf-token', csrfProtection, (req, res) => {
     res.json({ csrfToken: req.csrfToken() })
 })
+
 authRouter.get('/user', auth, getCurrentUser)
-authRouter.patch('/me', auth, csrfProtection, updateCurrentUser)
+authRouter.patch('/me', auth, updateCurrentUser)
 authRouter.get('/user/roles', auth, getCurrentUserRoles)
-authRouter.post('/login', csrfProtection, login)
+authRouter.post('/login', csrfProtection, validateAuthentication, login)
 authRouter.get('/token', refreshAccessToken)
 authRouter.get('/logout', logout)
-authRouter.post('/register', csrfProtection, register)
+authRouter.post('/register', csrfProtection, validateUserBody, register)
 
 export default authRouter
