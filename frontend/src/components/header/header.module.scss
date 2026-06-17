@@ -1,3 +1,7 @@
+@use 'mixins';
+@use 'variables' as *;
+
+
 .header {
     height: $headerHeight;
     background-color: $primary;
