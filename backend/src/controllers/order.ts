@@ -41,14 +41,15 @@ export const getOrders = async (
 
         const filters: FilterQuery<Partial<IOrder>> = {}
 
-        if (status) {
-            if (typeof status === 'object') {
-                Object.assign(filters, status)
-            }
-            if (typeof status === 'string') {
-                filters.status = status
-            }
-        }
+        if (status !== undefined) {
+    if (typeof status !== 'string') {
+        return next(
+            new BadRequestError('Некорректный параметр status')
+        )
+    }
+
+    filters.status = status
+}
 
         if (totalAmountFrom) {
             filters.totalAmount = {
@@ -117,11 +118,25 @@ export const getOrders = async (
             })
         }
 
-        const sort: { [key: string]: any } = {}
+const allowedSortFields = [
+    'createdAt',
+    'orderNumber',
+    'totalAmount',
+    'status',
+]
 
-        if (sortField && sortOrder) {
-            sort[sortField as string] = sortOrder === 'desc' ? -1 : 1
-        }
+if (
+    typeof sortField !== 'string' ||
+    allowedSortFields.indexOf(sortField) === -1
+) {
+    return next(
+        new BadRequestError('Некорректное поле сортировки')
+    )
+}
+
+const sort: { [key: string]: 1 | -1 } = {}
+
+sort[sortField] = sortOrder === 'desc' ? -1 : 1
 
         aggregatePipeline.push(
             { $sort: sort },
