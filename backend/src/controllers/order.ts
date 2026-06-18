@@ -23,8 +23,8 @@ export const getOrders = async (
 ) => {
     try {
         const {
-            page = 1,
-            limit = 10,
+            page,
+            limit,
             sortField = 'createdAt',
             sortOrder = 'desc',
             status,
@@ -35,28 +35,44 @@ export const getOrders = async (
             search,
         } = req.query
 
-        /**
-         * 🔥 FIX: нормализация limit (защита от 1000, 9999 и т.д.)
-         * тест требует max <= 10
-         */
-        const normalizedLimit = Math.min(
-            Math.max(Number(limit) || 10, 1),
-            10
+        // =========================================================
+        // 🔥 FIX 1: ПРАВИЛЬНАЯ НОРМАЛИЗАЦИЯ PAGE
+        // - query всегда string → нужен parseInt
+        // - защита от NaN и отрицательных значений
+        // =========================================================
+        const parsedPage = parseInt(page as string, 10)
+
+        const normalizedPage = Math.max(
+            Number.isNaN(parsedPage) ? 1 : parsedPage,
+            1
         )
 
-        const normalizedPage = Math.max(Number(page) || 1, 1)
+        // =========================================================
+        // 🔥 FIX 2: ПРАВИЛЬНАЯ НОРМАЛИЗАЦИЯ LIMIT
+        // - parseInt вместо Number()
+        // - защита от NaN
+        // - ограничение по тесту (max = 10)
+        // =========================================================
+        const parsedLimit = parseInt(limit as string, 10)
 
+        const normalizedLimit = Math.min(
+            Math.max(Number.isNaN(parsedLimit) ? 10 : parsedLimit, 1),
+            10 // ⚠️ тест требует max 10
+        )
+
+        // =========================================================
+        // FILTERS
+        // =========================================================
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status !== undefined) {
-    if (typeof status !== 'string') {
-        return next(
-            new BadRequestError('Некорректный параметр status')
-        )
-    }
-
-    filters.status = status
-}
+            if (typeof status !== 'string') {
+                return next(
+                    new BadRequestError('Некорректный параметр status')
+                )
+            }
+            filters.status = status
+        }
 
         if (totalAmountFrom) {
             filters.totalAmount = {
@@ -86,6 +102,9 @@ export const getOrders = async (
             }
         }
 
+        // =========================================================
+        // AGGREGATION PIPELINE
+        // =========================================================
         const aggregatePipeline: any[] = [
             { $match: filters },
             {
@@ -108,11 +127,16 @@ export const getOrders = async (
             { $unwind: '$products' },
         ]
 
+        // =========================================================
+        // SEARCH
+        // =========================================================
         if (search) {
             const searchRegex = new RegExp(search as string, 'i')
             const searchNumber = Number(search)
 
-            const searchConditions: any[] = [{ 'products.title': searchRegex }]
+            const searchConditions: any[] = [
+                { 'products.title': searchRegex },
+            ]
 
             if (!Number.isNaN(searchNumber)) {
                 searchConditions.push({ orderNumber: searchNumber })
@@ -125,34 +149,43 @@ export const getOrders = async (
             })
         }
 
-const allowedSortFields = [
-    'createdAt',
-    'orderNumber',
-    'totalAmount',
-    'status',
-]
+        // =========================================================
+        // SORT VALIDATION
+        // =========================================================
+        const allowedSortFields = [
+            'createdAt',
+            'orderNumber',
+            'totalAmount',
+            'status',
+        ]
 
-if (
-    typeof sortField !== 'string' ||
-    allowedSortFields.indexOf(sortField) === -1
-) {
-    return next(
-        new BadRequestError('Некорректное поле сортировки')
-    )
-}
+        if (
+            typeof sortField !== 'string' ||
+            !allowedSortFields.includes(sortField)
+        ) {
+            return next(
+                new BadRequestError('Некорректное поле сортировки')
+            )
+        }
 
-const sort: { [key: string]: 1 | -1 } = {}
+        const sort: Record<string, 1 | -1> = {}
 
-sort[sortField] = sortOrder === 'desc' ? -1 : 1
+        sort[sortField] = sortOrder === 'desc' ? -1 : 1
 
+        // =========================================================
+        // PAGINATION (ВАЖНО: используем normalizedLimit / Page)
+        // =========================================================
         aggregatePipeline.push(
             { $sort: sort },
+
             {
-                $skip: (normalizedPage - 1) * normalizedLimit, // 🔥 FIX
+                $skip: (normalizedPage - 1) * normalizedLimit,
             },
+
             {
-                $limit: normalizedLimit, // 🔥 FIX
+                $limit: normalizedLimit,
             },
+
             {
                 $group: {
                     _id: '$_id',
@@ -166,19 +199,25 @@ sort[sortField] = sortOrder === 'desc' ? -1 : 1
             }
         )
 
+        // =========================================================
+        // QUERY EXECUTION
+        // =========================================================
         const orders = await Order.aggregate(aggregatePipeline)
 
         const totalOrders = await Order.countDocuments(filters)
 
-        const totalPages = Math.ceil(totalOrders / normalizedLimit) // 🔥 FIX
+        // =========================================================
+        // FIX 3: totalPages тоже зависит от normalizedLimit
+        // =========================================================
+        const totalPages = Math.ceil(totalOrders / normalizedLimit)
 
-        res.status(200).json({
+        return res.status(200).json({
             orders,
             pagination: {
                 totalOrders,
                 totalPages,
                 currentPage: normalizedPage,
-                pageSize: normalizedLimit, // 🔥 FIX (главный тест)
+                pageSize: normalizedLimit, // 🔥 ключевой тестовый параметр
             },
         })
     } catch (error) {
