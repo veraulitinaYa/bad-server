@@ -8,6 +8,7 @@ import path from 'path'
 import { DB_ADDRESS } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
+
 import routes from './routes'
 
 
