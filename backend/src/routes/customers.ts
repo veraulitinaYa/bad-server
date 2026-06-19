@@ -11,10 +11,10 @@ import rateLimiter from '../middlewares/rate-limiter'
 
 const customerRouter = Router()
 
-customerRouter.use(rateLimiter)
 
 customerRouter.get(
     '/',
+    rateLimiter,
     auth,
     roleGuardMiddleware(Role.Admin),
     getCustomers
