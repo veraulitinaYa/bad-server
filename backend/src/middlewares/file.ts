@@ -1,15 +1,19 @@
+import { Request, Express } from 'express'
 import multer, { FileFilterCallback } from 'multer'
 import { mkdirSync } from 'fs'
-import { join, extname } from 'path'
+import { join } from 'path'
 import crypto from 'crypto'
+import { extname } from 'path'
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 
-
 const storage = multer.diskStorage({
-    destination: (_req, _file, cb: DestinationCallback) => {
+    destination: (
+        _req: Request,
+        _file: Express.Multer.File,
+        cb: DestinationCallback
+    ) => {
         const destinationPath = join(
             __dirname,
             process.env.UPLOAD_PATH_TEMP
@@ -22,11 +26,18 @@ const storage = multer.diskStorage({
         cb(null, destinationPath)
     },
 
-    filename: (_req, file, cb: FileNameCallback) => {
-        const extension = extname(file.originalname)
+filename: (
+    _req: Request,
+    file: Express.Multer.File,
+    cb: FileNameCallback
+) => {
+    const extension = extname(file.originalname)
 
-        cb(null, `${crypto.randomUUID()}${extension}`)
-    },
+    cb(
+        null,
+        `${crypto.randomUUID()}${extension}`
+    )
+},
 })
 
 const types = [
@@ -38,21 +49,15 @@ const types = [
 ]
 
 const fileFilter = (
-    _req: any,
+    _req: Request,
     file: Express.Multer.File,
     cb: FileFilterCallback
 ) => {
     if (!types.includes(file.mimetype)) {
-        return cb(null, false) // 🔥 FIX: reject invalid mime
+        return cb(null, false)
     }
 
-    cb(null, true)
+    return cb(null, true)
 }
 
-export default multer({
-    storage,
-    fileFilter,
-    limits: {
-        fileSize: MAX_FILE_SIZE, // 🔥 FIX 14/15: ограничение размера
-    },
-})
+export default multer({ storage, fileFilter })
