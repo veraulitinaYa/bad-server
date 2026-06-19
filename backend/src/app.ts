@@ -8,16 +8,9 @@ import path from 'path'
 import { DB_ADDRESS } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
-import rateLimit from 'express-rate-limit'
+
 import routes from './routes'
 
-const limiter = rateLimit({
-    windowMs: 60 * 1000, // 1 минута
-    max: 20, // максимум 20 запросов
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: 'Too many requests' },
-})
 
 
 const { PORT = 3000, ORIGIN_ALLOW = 'http://localhost:5173' } = process.env
@@ -31,7 +24,7 @@ app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }))
 app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
-app.use(limiter)
+
 
 const bootstrap = async () => {
     try {
