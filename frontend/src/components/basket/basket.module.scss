@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .basket {
     @include mixins.flex(column);
     gap: 2rem;

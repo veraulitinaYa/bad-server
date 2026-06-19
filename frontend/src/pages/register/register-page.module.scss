@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .register {
     max-width: $maxPageWidth;
     margin: 0 auto;
