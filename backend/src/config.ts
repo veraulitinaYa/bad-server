@@ -25,7 +25,7 @@ export const REFRESH_TOKEN = {
 
 export const RATE_LIMIT = {
     enabled: true,
-    points: 40,
+    points: 10,
     duration: 60,
     blockDuration: 60,
 }
