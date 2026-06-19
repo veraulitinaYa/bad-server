@@ -11,10 +11,6 @@ import serveStatic from './middlewares/serverStatic'
 import rateLimit from 'express-rate-limit'
 import routes from './routes'
 
-const { PORT = 3000, ORIGIN_ALLOW = 'http://localhost:5173' } = process.env
-
-const app = express()
-
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 минута
     max: 20, // максимум 20 запросов
@@ -22,6 +18,12 @@ const limiter = rateLimit({
     legacyHeaders: false,
     message: { message: 'Too many requests' },
 })
+
+
+const { PORT = 3000, ORIGIN_ALLOW = 'http://localhost:5173' } = process.env
+
+const app = express()
+
 
 app.use(cookieParser())
 app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }))
