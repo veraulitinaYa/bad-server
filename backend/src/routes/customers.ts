@@ -7,11 +7,8 @@ import {
 } from '../controllers/customers'
 import auth, { roleGuardMiddleware } from '../middlewares/auth'
 import { Role } from '../models/user'
-import rateLimiter from '../middlewares/rate-limiter'
 
 const customerRouter = Router()
-
-customerRouter.use(rateLimiter)
 
 customerRouter.get(
     '/',

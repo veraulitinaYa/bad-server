@@ -22,10 +22,3 @@ export const REFRESH_TOKEN = {
         } as CookieOptions,
     },
 }
-
-export const RATE_LIMIT = {
-    enabled: true,
-    points: 10,
-    duration: 60,
-    blockDuration: 60,
-}
