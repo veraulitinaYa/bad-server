@@ -8,6 +8,7 @@ import path from 'path'
 import { DB_ADDRESS } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
+import { apiLimiter } from './middlewares/rate-limiter'
 import routes from './routes'
 
 const { PORT = 3000, ORIGIN_ALLOW = 'http://localhost:5173' } = process.env
@@ -16,6 +17,8 @@ const app = express()
 
 app.use(cookieParser())
 app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }))
+app.use(apiLimiter)
+
 app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
